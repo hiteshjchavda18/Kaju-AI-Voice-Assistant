@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build artifacts
+dist/
+*/dist/
+build/
+.vercel/
+
+# Environment and secrets
+.env
+*/.env
+*.txt
+*.key
+
+# Python & Checkpoints
+__pycache__/
+*/__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+local_sessions.json
+*/local_sessions.json
+
+# Audio temporary files
+*.wav
+*.mp3

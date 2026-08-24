@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+*/node_modules
+
+# Build outputs
+dist
+*/dist
+build
+.vercel
+
+# Environment variables
+.env
+*/.env
+Groq api key.txt
+
+# Python & Audio Cache
+__pycache__/
+*.pyc
+*.pyo
+*.wav
+*.mp3
+local_sessions.json
+.system_generated/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
