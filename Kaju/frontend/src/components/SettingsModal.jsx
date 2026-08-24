@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { X, Volume2, Key, Cpu, Sparkles, Check, Play, Loader2 } from 'lucide-react';
-import { synthesizeSpeechAudio } from '../utils/api';
+import { X, Volume2, Sparkles, Key, Cpu, Play, CheckCircle2, Loader2 } from 'lucide-react';
 
 export function SettingsModal({
   isOpen,
   onClose,
-  voices,
+  voices = [],
   currentVoice,
   onSelectVoice,
-  models,
+  onTestVoice,
+  models = [],
   currentModel,
   onSelectModel,
   customPrompt,
@@ -16,243 +16,225 @@ export function SettingsModal({
   apiKey,
   onSaveApiKey
 }) {
-  const [promptInput, setPromptInput] = useState(customPrompt);
+  const [promptInput, setPromptInput] = useState(customPrompt || '');
   const [keyInput, setKeyInput] = useState(apiKey || '');
   const [testingVoiceId, setTestingVoiceId] = useState(null);
-  const [savedSuccess, setSavedSuccess] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleTestVoice = async (voiceId) => {
-    try {
-      setTestingVoiceId(voiceId);
-      const sampleText = "Hello! I am Kaju. This is how my voice sounds.";
-      const { audioUrl } = await synthesizeSpeechAudio(sampleText, voiceId);
-      const audio = new Audio(audioUrl);
-      audio.onended = () => setTestingVoiceId(null);
-      audio.onerror = () => setTestingVoiceId(null);
-      await audio.play();
-    } catch (err) {
-      console.error('Error testing voice sample:', err);
-      setTestingVoiceId(null);
-    }
+  const handleSave = () => {
+    if (onSaveCustomPrompt) onSaveCustomPrompt(promptInput);
+    if (onSaveApiKey) onSaveApiKey(keyInput);
+    onClose();
   };
 
-  const handleSave = () => {
-    onSaveCustomPrompt(promptInput);
-    onSaveApiKey(keyInput.trim());
-    setSavedSuccess(true);
-    setTimeout(() => {
-      setSavedSuccess(false);
-      onClose();
-    }, 800);
+  const handleTestVoice = (voiceId) => {
+    setTestingVoiceId(voiceId);
+    if (onSelectVoice) onSelectVoice(voiceId);
+    if (onTestVoice) onTestVoice('Hello! I am Kaju. How can I help you today?', voiceId);
+    setTimeout(() => setTestingVoiceId(null), 2000);
   };
 
   return (
     <div style={{
       position: 'fixed',
       inset: 0,
-      background: 'rgba(5, 3, 10, 0.8)',
-      backdropFilter: 'blur(10px)',
+      background: 'rgba(5, 3, 10, 0.85)',
+      backdropFilter: 'blur(12px)',
       zIndex: 120,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '20px'
+      padding: '16px'
     }}>
-      <div className="glass-panel" style={{
+      <div style={{
         width: '100%',
-        maxWidth: '560px',
-        maxHeight: '90vh',
+        maxWidth: '580px',
+        maxHeight: '92vh',
         overflowY: 'auto',
-        background: 'rgba(16, 10, 28, 0.96)',
-        border: '1px solid var(--border-glow)',
-        borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--glow-purple-lg)',
+        background: 'rgba(16, 10, 28, 0.98)',
+        border: '1px solid rgba(168, 85, 247, 0.3)',
+        borderRadius: '16px',
+        boxShadow: '0 0 60px rgba(168, 85, 247, 0.25)',
         display: 'flex',
         flexDirection: 'column'
       }}>
-        {/* Modal Header */}
+        {/* Header */}
         <div style={{
-          padding: '20px 24px',
-          borderBottom: '1px solid var(--border-glass)',
+          padding: '18px 24px',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          background: 'rgba(255, 255, 255, 0.02)'
+          justifyContent: 'space-between'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Sparkles size={20} color="#c084fc" />
-            <h2 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fcfaff' }}>Kaju 🥜 Settings & Voices</h2>
+            <h2 style={{ fontSize: '1.18rem', fontWeight: '700', color: '#fcfaff', margin: 0 }}>
+              Settings &amp; Voice Selector
+            </h2>
           </div>
-          <button onClick={onClose} className="btn btn-secondary btn-icon" style={{ width: '34px', height: '34px' }}>
+          <button
+            onClick={onClose}
+            className="btn btn-secondary"
+            style={{ width: '34px', height: '34px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
             <X size={16} />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
+        {/* Body */}
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-          {/* 1. Voice Selection */}
+          {/* Voice Selection */}
           <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: '600', marginBottom: '10px', color: '#e9d5ff' }}>
-              <Volume2 size={16} color="#c084fc" />
-              <span>Neural Female Voice</span>
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: '600', color: '#e9d5ff' }}>
+                <Volume2 size={16} color="#c084fc" />
+                <span>Select Assistant Voice</span>
+              </label>
+              <span style={{ fontSize: '0.75rem', color: '#c084fc' }}>Click to preview &amp; select</span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '10px' }}>
               {voices.map((v) => {
                 const isSelected = v.id === currentVoice;
+                const isTesting = testingVoiceId === v.id;
                 return (
                   <div
                     key={v.id}
-                    onClick={() => onSelectVoice(v.id)}
-                    className="glass-card"
+                    onClick={() => handleTestVoice(v.id)}
                     style={{
-                      padding: '10px 14px',
+                      padding: '12px 14px',
                       cursor: 'pointer',
-                      borderRadius: 'var(--radius-sm)',
-                      background: isSelected ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255, 255, 255, 0.03)',
-                      borderColor: isSelected ? 'rgba(168, 85, 247, 0.75)' : 'var(--border-glass)',
+                      borderRadius: '10px',
+                      background: isSelected ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                      border: `1px solid ${isSelected ? '#a855f7' : 'rgba(255,255,255,0.1)'}`,
+                      boxShadow: isSelected ? '0 0 16px rgba(168, 85, 247, 0.35)' : 'none',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      transition: 'all 0.2s ease'
                     }}
                   >
-                    <div>
-                      <div style={{ fontSize: '0.88rem', fontWeight: isSelected ? '600' : '400', color: isSelected ? '#fff' : '#e2e8f0' }}>
-                        {v.name}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: isSelected ? '#a855f7' : 'rgba(255,255,255,0.08)',
+                        flexShrink: 0
+                      }}>
+                        {isSelected
+                          ? <CheckCircle2 size={16} color="#fff" />
+                          : <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }} />
+                        }
                       </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-                        {v.language}
+                      <div>
+                        <div style={{ fontSize: '0.88rem', fontWeight: isSelected ? '600' : '500', color: isSelected ? '#fff' : '#e2e8f0' }}>
+                          {v.name}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: isSelected ? '#e9d5ff' : '#94a3b8' }}>
+                          {v.language}
+                        </div>
                       </div>
                     </div>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleTestVoice(v.id);
-                      }}
-                      className="btn btn-secondary"
-                      style={{ padding: '4px 8px', fontSize: '0.7rem', height: '26px' }}
-                      title="Preview voice"
-                    >
-                      {testingVoiceId === v.id ? (
-                        <Loader2 size={12} className="animate-spin" />
-                      ) : (
-                        <Play size={10} fill="#c084fc" color="#c084fc" />
-                      )}
-                    </button>
+                    <div style={{
+                      width: '30px',
+                      height: '30px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '50%',
+                      background: 'rgba(168,85,247,0.15)',
+                      flexShrink: 0
+                    }}>
+                      {isTesting
+                        ? <Loader2 size={14} color="#c084fc" style={{ animation: 'spin 1s linear infinite' }} />
+                        : <Play size={13} color="#c084fc" />
+                      }
+                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* 2. Model Selection */}
+          {/* Model Selection */}
           <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: '600', marginBottom: '8px', color: '#e9d5ff' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: '600', color: '#e9d5ff', marginBottom: '10px' }}>
               <Cpu size={16} color="#c084fc" />
-              <span>Intelligence Engine (Groq LLM)</span>
+              <span>AI Model</span>
             </label>
-            <select
-              value={currentModel}
-              onChange={(e) => onSelectModel(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '11px 16px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'rgba(26, 17, 44, 0.9)',
-                border: '1px solid var(--border-glass)',
-                color: '#fff',
-                fontSize: '0.9rem',
-                outline: 'none',
-                fontFamily: 'var(--font-sans)'
-              }}
-            >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {models.map((m) => (
-                <option key={m.id} value={m.id} style={{ background: '#120b20', color: '#fff' }}>
-                  {m.name}
-                </option>
+                <div
+                  key={m.id}
+                  onClick={() => onSelectModel && onSelectModel(m.id)}
+                  style={{
+                    padding: '10px 14px',
+                    cursor: 'pointer',
+                    borderRadius: '10px',
+                    background: currentModel === m.id ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${currentModel === m.id ? '#a855f7' : 'rgba(255,255,255,0.1)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <span style={{ fontSize: '0.88rem', fontWeight: '500', color: currentModel === m.id ? '#fff' : '#e2e8f0' }}>
+                    {m.name}
+                  </span>
+                  {currentModel === m.id && <CheckCircle2 size={16} color="#a855f7" />}
+                </div>
               ))}
-            </select>
+            </div>
           </div>
 
-          {/* 3. API Key Override */}
+          {/* API Key */}
           <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: '600', marginBottom: '8px', color: '#e9d5ff' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: '600', color: '#e9d5ff', marginBottom: '10px' }}>
               <Key size={16} color="#c084fc" />
-              <span>Groq API Key (Optional)</span>
+              <span>Groq API Key</span>
             </label>
             <input
               type="password"
-              placeholder="Default key active"
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '11px 16px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid var(--border-glass)',
-                color: '#fff',
-                fontSize: '0.85rem',
-                outline: 'none',
-                fontFamily: 'var(--font-mono)'
-              }}
+              placeholder="gsk_..."
+              className="input-field"
+              style={{ width: '100%', boxSizing: 'border-box' }}
             />
           </div>
 
-          {/* 4. System Prompt */}
+          {/* System Prompt */}
           <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: '600', marginBottom: '8px', color: '#e9d5ff' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: '600', color: '#e9d5ff', marginBottom: '10px' }}>
               <Sparkles size={16} color="#c084fc" />
-              <span>System Persona Instruction</span>
+              <span>System Prompt</span>
             </label>
             <textarea
-              rows={4}
               value={promptInput}
               onChange={(e) => setPromptInput(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid var(--border-glass)',
-                color: '#fff',
-                fontSize: '0.82rem',
-                outline: 'none',
-                resize: 'vertical',
-                fontFamily: 'var(--font-sans)',
-                lineHeight: '1.4'
-              }}
+              rows={4}
+              className="input-field"
+              style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', minHeight: '80px' }}
+              placeholder="You are Kaju, a helpful AI voice assistant..."
             />
           </div>
 
-        </div>
-
-        {/* Modal Footer */}
-        <div style={{
-          padding: '16px 24px',
-          borderTop: '1px solid var(--border-glass)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          gap: '12px',
-          background: 'rgba(10, 6, 18, 0.5)'
-        }}>
-          <button onClick={onClose} className="btn btn-secondary">
-            Cancel
-          </button>
-          <button onClick={handleSave} className="btn btn-primary" style={{ minWidth: '110px' }}>
-            {savedSuccess ? (
-              <>
-                <Check size={16} />
-                <span>Saved</span>
-              </>
-            ) : (
-              <span>Save Changes</span>
-            )}
-          </button>
+          {/* Footer Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <button onClick={onClose} className="btn btn-secondary" style={{ padding: '8px 20px' }}>
+              Cancel
+            </button>
+            <button onClick={handleSave} className="btn btn-primary" style={{ padding: '8px 24px' }}>
+              Save Settings
+            </button>
+          </div>
         </div>
       </div>
     </div>

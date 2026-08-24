@@ -13,10 +13,10 @@ export async function getVoices() {
   try {
     const res = await fetch(`${API_BASE}/voices`);
     const data = await res.json();
-    return data.voices || [];
+    return data; // returns { voices: [...] }
   } catch (err) {
     console.error('Failed to get voices:', err);
-    return [];
+    return { voices: [] };
   }
 }
 
@@ -24,10 +24,10 @@ export async function getModels() {
   try {
     const res = await fetch(`${API_BASE}/models`);
     const data = await res.json();
-    return data.models || [];
+    return data; // returns { models: [...] }
   } catch (err) {
     console.error('Failed to get models:', err);
-    return [];
+    return { models: [] };
   }
 }
 
@@ -37,11 +37,8 @@ export async function sendChatMessage({ message, history, model, customSystemPro
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, history, model, customSystemPrompt, apiKey })
   });
-
   const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error || 'Failed to send chat message');
-  }
+  if (!res.ok) throw new Error(data.error || 'Failed to send chat message');
   return data;
 }
 
@@ -50,21 +47,15 @@ export async function transcribeAudioBlob(audioBlob, apiKey) {
   const type = audioBlob.type || 'audio/webm';
   const ext = type.includes('wav') ? 'wav' : type.includes('mp4') ? 'mp4' : type.includes('ogg') ? 'ogg' : 'webm';
   formData.append('audio', audioBlob, `recording.${ext}`);
-  
-  if (apiKey) {
-    formData.append('apiKey', apiKey);
-  }
+  if (apiKey) formData.append('apiKey', apiKey);
 
   const res = await fetch(`${API_BASE}/speech-to-text`, {
     method: 'POST',
     body: formData
   });
-
   const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error || 'Transcription failed');
-  }
-  return data.text;
+  if (!res.ok) throw new Error(data.error || 'Transcription failed');
+  return data;
 }
 
 export async function synthesizeSpeechAudio(text, voice) {
@@ -84,7 +75,6 @@ export async function synthesizeSpeechAudio(text, voice) {
   return { audioUrl, blob };
 }
 
-// Session Management (MongoDB)
 export async function fetchSessions() {
   try {
     const res = await fetch(`${API_BASE}/sessions`);
@@ -107,14 +97,19 @@ export async function createNewSession(data) {
   const res = await fetch(`${API_BASE}/sessions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(typeof data === 'string' ? { title: data } : data)
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error || 'Failed to create session');
-  return json.session;
+  return json.session || json;
 }
 
-export async function appendMessageToSession(sessionId, messageData) {
+export async function appendMessageToSession(sessionId, role, content) {
+  // Support both (sessionId, role, content) and (sessionId, messageData)
+  const messageData = typeof role === 'string'
+    ? { role, content }
+    : role;
+
   const res = await fetch(`${API_BASE}/sessions/${sessionId}/messages`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -122,7 +117,7 @@ export async function appendMessageToSession(sessionId, messageData) {
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error || 'Failed to update session');
-  return json.session;
+  return json.session || json;
 }
 
 export async function deleteSessionById(sessionId) {

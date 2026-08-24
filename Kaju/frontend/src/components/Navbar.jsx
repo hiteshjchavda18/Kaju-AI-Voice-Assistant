@@ -1,6 +1,14 @@
 import React from 'react';
-import { Mic, MessageSquare, Settings, Volume2, VolumeX, Menu } from 'lucide-react';
-import { CashewMoonIcon } from './CashewMoonIcon';
+import {
+  Sparkles,
+  Settings,
+  History,
+  Volume2,
+  VolumeX,
+  Radio,
+  Columns,
+  Mic2
+} from 'lucide-react';
 
 export function Navbar({
   mode,
@@ -9,152 +17,138 @@ export function Navbar({
   onToggleSidebar,
   autoSpeak,
   setAutoSpeak,
-  currentVoice,
-  mongoConnected
+  currentVoice = 'Ava',
+  mongoConnected = false
 }) {
   return (
-    <header className="navbar-container glass-panel" style={{
+    <header className="navbar-container" style={{
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '12px 24px',
-      margin: '16px 20px 20px',
-      zIndex: 50,
-      borderRadius: 'var(--radius-md)',
-      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.4)'
+      padding: '12px 18px',
+      margin: '12px 0 16px',
+      borderRadius: '12px',
+      background: 'rgba(20, 13, 36, 0.75)',
+      backdropFilter: 'blur(16px)',
+      border: '1px solid rgba(168, 85, 247, 0.2)',
+      gap: '12px',
+      flexWrap: 'wrap'
     }}>
-      {/* Left: Branding & Drawer Toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+      {/* Left: History + Brand */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button
           onClick={onToggleSidebar}
           className="btn btn-secondary btn-icon"
-          title="Past Conversations"
-          style={{ width: '38px', height: '38px' }}
+          title="Chat History"
+          style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          <Menu size={18} />
+          <History size={18} />
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             width: '38px',
             height: '38px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #c084fc 0%, #7e22ce 100%)',
+            borderRadius: '10px',
+            background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(168, 85, 247, 0.5)',
-            border: '1px solid rgba(255, 255, 255, 0.25)'
+            overflow: 'hidden'
           }}>
-            <CashewMoonIcon size={24} />
+            <Sparkles size={20} color="#fff" />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{
+                fontSize: '1.2rem',
                 fontWeight: '800',
-                fontSize: '1.25rem',
-                letterSpacing: '-0.02em',
                 background: 'linear-gradient(135deg, #ffffff 0%, #e9d5ff 100%)',
                 WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
+                WebkitTextFillColor: 'transparent'
               }}>
-                KAJU
-                <CashewMoonIcon size={24} />
+                Kaju AI
               </span>
               <span style={{
                 fontSize: '0.68rem',
-                fontWeight: '600',
                 padding: '2px 8px',
-                borderRadius: 'var(--radius-full)',
-                background: 'rgba(168, 85, 247, 0.18)',
-                color: '#d8b4fe',
-                border: '1px solid rgba(168, 85, 247, 0.35)',
-                letterSpacing: '0.04em'
+                background: 'rgba(168,85,247,0.2)',
+                borderRadius: '10px',
+                color: '#c084fc'
               }}>
-                VOICE AI
+                v2.0
               </span>
             </div>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              Intelligent Voice Assistant
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#94a3b8' }}>
+              <span style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#10b981',
+                display: 'inline-block'
+              }} />
+              <span>Ready</span>
+              {mongoConnected && <span>&bull; Cloud Synced</span>}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Center: Mode Tabs (Voice Orb vs Chat View) */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        background: 'rgba(15, 10, 26, 0.65)',
-        padding: '4px',
-        borderRadius: 'var(--radius-full)',
-        border: '1px solid var(--border-glass)'
-      }}>
-        <button
-          onClick={() => setMode('voice')}
-          className={`btn ${mode === 'voice' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{
-            padding: '7px 18px',
-            fontSize: '0.85rem',
-            borderRadius: 'var(--radius-full)',
-            border: mode === 'voice' ? '1px solid rgba(233, 213, 255, 0.25)' : 'none',
-            background: mode !== 'voice' ? 'transparent' : undefined
-          }}
-        >
-          <Mic size={15} />
-          <span>Voice Orb</span>
-        </button>
-        <button
-          onClick={() => setMode('split')}
-          className={`btn ${mode === 'split' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{
-            padding: '7px 18px',
-            fontSize: '0.85rem',
-            borderRadius: 'var(--radius-full)',
-            border: mode === 'split' ? '1px solid rgba(233, 213, 255, 0.25)' : 'none',
-            background: mode !== 'split' ? 'transparent' : undefined
-          }}
-        >
-          <MessageSquare size={15} />
-          <span>Chat View</span>
-        </button>
-      </div>
+      {/* Right: Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        {/* Mode toggle */}
+        <div style={{
+          display: 'flex',
+          background: 'rgba(255, 255, 255, 0.05)',
+          padding: '3px',
+          borderRadius: '8px',
+          border: '1px solid rgba(168, 85, 247, 0.2)'
+        }}>
+          <button
+            onClick={() => setMode('voice')}
+            className={"btn " + (mode === 'voice' ? 'btn-primary' : 'btn-secondary')}
+            style={{ padding: '6px 12px', fontSize: '0.8rem', height: '32px', border: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}
+          >
+            <Radio size={14} />
+            <span>Voice</span>
+          </button>
+          <button
+            onClick={() => setMode('split')}
+            className={"btn " + (mode === 'split' ? 'btn-primary' : 'btn-secondary')}
+            style={{ padding: '6px 12px', fontSize: '0.8rem', height: '32px', border: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}
+          >
+            <Columns size={14} />
+            <span>Split</span>
+          </button>
+        </div>
 
-      {/* Right: Auto-Speech Toggle, Status Dot, Settings */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {/* Voice Speech Toggle */}
+        {/* Voice pill */}
+        <button
+          onClick={onOpenSettings}
+          className="btn btn-secondary"
+          style={{ padding: '6px 12px', fontSize: '0.8rem', height: '34px', display: 'flex', alignItems: 'center', gap: '6px' }}
+          title="Change Voice in Settings"
+        >
+          <Mic2 size={14} color="#c084fc" />
+          <span>Voice: <strong style={{ color: '#fff' }}>{currentVoice}</strong></span>
+        </button>
+
+        {/* Auto-speak toggle */}
         <button
           onClick={() => setAutoSpeak(!autoSpeak)}
           className="btn btn-secondary"
-          style={{
-            padding: '7px 14px',
-            fontSize: '0.82rem',
-            background: autoSpeak ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-            border: `1px solid ${autoSpeak ? 'rgba(168, 85, 247, 0.45)' : 'var(--border-glass)'}`,
-            color: autoSpeak ? '#e9d5ff' : 'var(--text-dim)',
-            borderRadius: 'var(--radius-full)'
-          }}
-          title={autoSpeak ? 'Voice response enabled' : 'Voice response muted'}
+          style={{ width: '36px', height: '36px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          title={autoSpeak ? 'Voice Output: ON' : 'Voice Output: OFF'}
         >
-          {autoSpeak ? <Volume2 size={15} color="#c084fc" /> : <VolumeX size={15} />}
-          <span>{autoSpeak ? 'Voice Active' : 'Muted'}</span>
+          {autoSpeak ? <Volume2 size={17} color="#c084fc" /> : <VolumeX size={17} color="#94a3b8" />}
         </button>
 
-        {/* Status Indicator */}
-        <div className="status-pill" title="Assistant Status" style={{ padding: '6px 12px' }}>
-          <span className="status-dot active"></span>
-          <span style={{ color: '#d8b4fe' }}>Connected</span>
-        </div>
-
-        {/* Settings button */}
+        {/* Settings */}
         <button
           onClick={onOpenSettings}
           className="btn btn-secondary btn-icon"
-          title="Settings & Voices"
-          style={{ width: '38px', height: '38px' }}
+          title="Settings"
+          style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <Settings size={17} />
         </button>
