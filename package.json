@@ -1,0 +1,11 @@
+{
+  "name": "kaju-mern-voice-assistant",
+  "version": "1.0.0",
+  "description": "Full Stack MERN AI Voice Assistant for Kaju",
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build"
+  }
+}

@@ -1,0 +1,27 @@
+﻿{
+  "version": 2,
+  "builds": [
+    {
+      "src": "Kaju/frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
+    },
+    {
+      "src": "Kaju/backend/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/Kaju/backend/server.js"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/Kaju/frontend/dist/$1"
+    }
+  ]
+}
