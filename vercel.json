@@ -1,27 +1,14 @@
 ﻿{
-  "version": 2,
-  "builds": [
+  "outputDirectory": "Kaju/frontend/dist",
+  "buildCommand": "npm --prefix Kaju/frontend run build",
+  "rewrites": [
     {
-      "src": "Kaju/frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
     },
     {
-      "src": "Kaju/backend/server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/Kaju/backend/server.js"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/Kaju/frontend/dist/$1"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

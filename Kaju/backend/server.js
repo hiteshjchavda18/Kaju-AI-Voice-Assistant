@@ -15,6 +15,7 @@ app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 // API Routes
 app.use('/api', apiRoutes);
+app.use('/', apiRoutes);
 
 // Root route
 app.get('/', (req, res) => {
