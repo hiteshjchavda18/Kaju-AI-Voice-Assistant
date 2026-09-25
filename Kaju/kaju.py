@@ -22,6 +22,16 @@ import sounddevice as sd
 import scipy.io.wavfile as wav
 import numpy as np
 
+# Ensure UTF-8 console output on Windows
+if sys.platform == "win32":
+    try:
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        if hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 # ==============================================================================
 # 1. PATHS & CONFIGURATION
 # ==============================================================================
@@ -38,19 +48,44 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FEMALE_VOICE = "en-US-AvaNeural"
 
 # API Key & Model Configuration
+DEFAULT_GROQ_KEY = os.getenv("GROQ_API_KEY", "")
 API_KEY_FILE = os.path.join(BASE_DIR, "Groq api key.txt")
-if os.path.exists(API_KEY_FILE):
-    with open(API_KEY_FILE, "r", encoding="utf-8") as f:
-        API_KEY = f.read().strip()
-else:
-    
-# API Key & Model Configuration
 API_KEY_EXT = "C:/Users/hites/OneDrive/Documents/5th Sem/ML/MLAPIGRAQ/Groq_api_key.txt"
-if os.path.exists(API_KEY_EXT):
-    with open(API_KEY_EXT, "r", encoding="utf-8") as f:
-        API_KEY = f.read().strip()
-else:
-    API_KEY = os.getenv("GROQ_API_KEY", "")
+
+def load_api_key() -> str:
+    """Finds the Groq API key from environment, key files, or project configs."""
+    # 1. Environment variable
+    env_key = os.getenv("GROQ_API_KEY", "").strip()
+    if env_key:
+        return env_key
+
+    # 2. Local or external key files
+    for path in [
+        API_KEY_FILE,
+        os.path.join(BASE_DIR, "groq_api_key.txt"),
+        os.path.join(BASE_DIR, ".env"),
+        os.path.join(BASE_DIR, "backend", ".env"),
+        API_KEY_EXT
+    ]:
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    content = f.read().strip()
+                    if path.endswith(".env"):
+                        for line in content.splitlines():
+                            if line.strip().startswith("GROQ_API_KEY="):
+                                k = line.strip().split("=", 1)[1].strip().strip('"').strip("'")
+                                if k:
+                                    return k
+                    elif content:
+                        return content
+            except Exception:
+                pass
+
+    # 3. Fallback to active key
+    return DEFAULT_GROQ_KEY
+
+API_KEY = load_api_key()
 
 LLM_MODEL = "openai/gpt-oss-120b"
 STT_MODEL = "whisper-large-v3-turbo"
@@ -80,8 +115,14 @@ def run_async(coroutine):
     return loop.run_until_complete(coroutine)
 
 def clean_text_for_speech(text: str) -> str:
-    """Cleans markdown symbols and emojis for smooth, human-like speech."""
-    cleaned = re.sub(r'[*_#`~]', '', text)
+    """Cleans markdown symbols, formatting, and emojis for smooth, human-like speech."""
+    replacements = {
+        '’': "'", '‘': "'", '“': '"', '”': '"',
+        '—': ' - ', '–': ' - ', '…': '...'
+    }
+    for orig, rep in replacements.items():
+        text = text.replace(orig, rep)
+    cleaned = re.sub(r'[*_#`~>\[\]\(\)]', '', text)
     cleaned = re.sub(r'[^\x00-\x7F]+', '', cleaned)
     cleaned = re.sub(r'\s+', ' ', cleaned).strip()
     return cleaned

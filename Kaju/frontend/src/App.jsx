@@ -260,7 +260,7 @@ export function App() {
   const voiceDisplayName = currentVoiceObj?.name?.split(' ')[0] || 'Ava';
 
   return (
-    <div style={{ minHeight: '100vh', minHeight: '100dvh', display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'hidden' }}>
       {/* Navbar */}
       <div style={{ width: '100%', maxWidth: '1300px', margin: '0 auto', padding: '0 16px' }}>
         <Navbar
@@ -333,7 +333,6 @@ export function App() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: 'calc(100vh - 160px)',
             minHeight: 'calc(100dvh - 160px)',
             textAlign: 'center',
             gap: '20px'
@@ -387,7 +386,6 @@ export function App() {
             gridTemplateColumns: 'minmax(300px, 380px) 1fr',
             gap: '20px',
             alignItems: 'stretch',
-            height: 'calc(100vh - 130px)',
             height: 'calc(100dvh - 130px)'
           }}>
             {/* Left: Voice Panel */}

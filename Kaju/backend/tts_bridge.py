@@ -6,6 +6,12 @@ import argparse
 
 def clean_text_for_speech(text: str) -> str:
     """Cleans markdown symbols, formatting, and unwanted unicode for smooth speech."""
+    replacements = {
+        '’': "'", '‘': "'", '“': '"', '”': '"',
+        '—': ' - ', '–': ' - ', '…': '...'
+    }
+    for orig, rep in replacements.items():
+        text = text.replace(orig, rep)
     cleaned = re.sub(r'[*_#`~>\[\]\(\)]', '', text)
     cleaned = re.sub(r'[^\x00-\x7F]+', '', cleaned)
     cleaned = re.sub(r'\s+', ' ', cleaned).strip()
