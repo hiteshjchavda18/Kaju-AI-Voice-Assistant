@@ -1,6 +1,5 @@
 {
   "outputDirectory": "Kaju/frontend/dist",
-  "buildCommand": "npm --prefix Kaju/frontend run build",
   "rewrites": [
     {
       "source": "/api/(.*)",

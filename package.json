@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Full Stack AI Voice Assistant for Kaju",
   "scripts": {
-    "build": "npm --prefix Kaju/frontend run build"
+    "build": "cd Kaju/frontend && npm install && npm run build"
   },
   "dependencies": {
     "axios": "^1.7.9",
