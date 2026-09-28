@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { spawn } = require('child_process');
 const axios = require('axios');
 const FormData = require('form-data');
 
@@ -14,8 +13,26 @@ const VOICES = [
   { id: 'en-US-EmmaNeural', name: 'Emma (US Warm & Friendly)', language: 'English (US)', gender: 'Female' },
   { id: 'en-US-JennyNeural', name: 'Jenny (US Professional)', language: 'English (US)', gender: 'Female' },
   { id: 'en-GB-SoniaNeural', name: 'Sonia (British English)', language: 'English (UK)', gender: 'Female' },
-  { id: 'en-AU-NatashaNeural', name: 'Natasha (Australian English)', language: 'English (Australia)', gender: 'Female' }
+  { id: 'en-AU-NatashaNeural', name: 'Natasha (Australian English)', language: 'English (Australia)', gender: 'Female' },
+  { id: 'hi-IN-SwaraNeural', name: 'Swara (Hindi)', language: 'Hindi (India)', gender: 'Female' }
 ];
+
+/**
+ * Cleans markdown/special chars from text before TTS
+ */
+function cleanTextForSpeech(text) {
+  const replacements = {
+    '\u2018': "'", '\u2019': "'", '\u201C': '"', '\u201D': '"',
+    '\u2014': ' - ', '\u2013': ' - ', '\u2026': '...'
+  };
+  let cleaned = text;
+  for (const [orig, rep] of Object.entries(replacements)) {
+    cleaned = cleaned.replaceAll(orig, rep);
+  }
+  cleaned = cleaned.replace(/[*_#`~>\[\]\(\)]/g, '');
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  return cleaned || 'Hello, I am Kaju.';
+}
 
 /**
  * Transcribes audio file from browser recording using Groq Whisper
@@ -30,7 +47,7 @@ exports.speechToText = async (req, res) => {
 
   if (!apiKey) {
     cleanupFile(filePath);
-    return res.status(500).json({ error: 'Groq API key not configured.' });
+    return res.status(500).json({ error: 'Groq API key not configured. Please add it in Settings.' });
   }
 
   try {
@@ -42,17 +59,13 @@ exports.speechToText = async (req, res) => {
     let cleanMime = 'audio/webm';
 
     if (rawMime.includes('wav') || originalName.endsWith('.wav')) {
-      ext = 'wav';
-      cleanMime = 'audio/wav';
+      ext = 'wav'; cleanMime = 'audio/wav';
     } else if (rawMime.includes('mp4') || rawMime.includes('m4a') || originalName.endsWith('.mp4') || originalName.endsWith('.m4a')) {
-      ext = 'mp4';
-      cleanMime = 'audio/mp4';
+      ext = 'mp4'; cleanMime = 'audio/mp4';
     } else if (rawMime.includes('ogg') || originalName.endsWith('.ogg')) {
-      ext = 'ogg';
-      cleanMime = 'audio/ogg';
+      ext = 'ogg'; cleanMime = 'audio/ogg';
     } else if (rawMime.includes('mp3') || originalName.endsWith('.mp3')) {
-      ext = 'mp3';
-      cleanMime = 'audio/mpeg';
+      ext = 'mp3'; cleanMime = 'audio/mpeg';
     }
 
     const formData = new FormData();
@@ -90,7 +103,8 @@ exports.speechToText = async (req, res) => {
 };
 
 /**
- * Synthesizes text into high-quality neural speech using Edge-TTS
+ * Synthesizes text into high-quality neural speech using msedge-tts (pure Node.js)
+ * No Python dependency — works on Vercel serverless functions.
  */
 exports.textToSpeech = async (req, res) => {
   const { text, voice = process.env.DEFAULT_VOICE || 'en-US-AvaNeural' } = req.body;
@@ -99,40 +113,28 @@ exports.textToSpeech = async (req, res) => {
     return res.status(400).json({ error: 'Text is required for TTS synthesis.' });
   }
 
-  const tempOutputPath = path.join(os.tmpdir(), `kaju_tts_${Date.now()}_${Math.random().toString(36).substring(7)}.mp3`);
-  const bridgeScript = path.join(__dirname, '..', 'tts_bridge.py');
+  const cleaned = cleanTextForSpeech(text);
 
   try {
-    // Run Python bridge with edge-tts
+    const { MsEdgeTTS, OUTPUT_FORMAT } = require('msedge-tts');
+    const tts = new MsEdgeTTS();
+    await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+
+    // toStream() returns { audioStream, metadataStream } synchronously
+    const { audioStream } = tts.toStream(cleaned);
+
+    const chunks = [];
     await new Promise((resolve, reject) => {
-      const pythonProcess = spawn('python', [
-        bridgeScript,
-        '--text', text,
-        '--voice', voice,
-        '--output', tempOutputPath
-      ]);
-
-      let stderr = '';
-      pythonProcess.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      pythonProcess.on('close', (code) => {
-        if (code === 0 && fs.existsSync(tempOutputPath)) {
-          resolve();
-        } else {
-          reject(new Error(stderr || `Python TTS process exited with code ${code}`));
-        }
-      });
-
-      pythonProcess.on('error', (err) => {
-        reject(err);
-      });
+      audioStream.on('data', (chunk) => chunks.push(chunk));
+      audioStream.on('end', resolve);
+      audioStream.on('error', reject);
     });
 
-    // Read generated MP3 and return
-    const audioBuffer = fs.readFileSync(tempOutputPath);
-    cleanupFile(tempOutputPath);
+    const audioBuffer = Buffer.concat(chunks);
+
+    if (!audioBuffer || audioBuffer.length === 0) {
+      throw new Error('No audio data received from TTS engine');
+    }
 
     res.set({
       'Content-Type': 'audio/mpeg',
@@ -143,7 +145,6 @@ exports.textToSpeech = async (req, res) => {
     return res.send(audioBuffer);
 
   } catch (error) {
-    cleanupFile(tempOutputPath);
     console.error('[TTS Controller Error]:', error.message);
     return res.status(500).json({
       error: 'Speech synthesis failed',
@@ -151,6 +152,7 @@ exports.textToSpeech = async (req, res) => {
     });
   }
 };
+
 
 /**
  * Returns available neural female voices

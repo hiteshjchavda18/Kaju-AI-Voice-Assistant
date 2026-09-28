@@ -218,13 +218,17 @@ export function App() {
       setStatus('thinking');
       if (recorderRef.current) {
         try {
+          // Capture live transcript before stopping (it lives on the recorder instance)
+          const capturedTranscript = recorderRef.current.liveTranscript || '';
           const blob = await recorderRef.current.stop();
           recorderRef.current = null;
-          if (liveTranscript.trim()) {
-            const t = liveTranscript.trim();
-            setLiveTranscript('');
-            handleSendMessage(t);
+          setLiveTranscript('');
+
+          if (capturedTranscript.trim()) {
+            // Use live speech recognition result (faster path)
+            handleSendMessage(capturedTranscript.trim());
           } else if (blob && blob.size > 2000) {
+            // Fallback: send audio blob to Groq Whisper STT
             const data = await transcribeAudioBlob(blob, apiKey);
             const t = data?.text || data;
             if (t && typeof t === 'string' && t.trim()) {
@@ -236,8 +240,11 @@ export function App() {
             setStatus('idle');
           }
         } catch (e) {
+          console.error('Recording stop error:', e);
           setStatus('idle');
         }
+      } else {
+        setStatus('idle');
       }
     } else {
       try {
@@ -250,6 +257,7 @@ export function App() {
         await recorderRef.current.start();
         setStatus('listening');
       } catch (err) {
+        console.error('Mic start error:', err);
         setStatus('idle');
         alert('Could not access microphone. Please allow microphone permissions.');
       }

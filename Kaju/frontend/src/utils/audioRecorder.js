@@ -5,7 +5,17 @@
  * 3. Web Audio API Analyser for dynamic soundwave visuals
  */
 export class AudioRecorder {
-  constructor() {
+  /**
+   * @param {Object} callbacks
+   * @param {Function} callbacks.onVolumeChange   - called with (volume, dataArray)
+   * @param {Function} callbacks.onFrequencyData  - called with frequency Uint8Array
+   * @param {Function} callbacks.onTranscriptChange - called with live transcript string
+   */
+  constructor({ onVolumeChange, onFrequencyData, onTranscriptChange } = {}) {
+    this.onVolumeChange = onVolumeChange || null;
+    this.onFrequencyData = onFrequencyData || null;
+    this.onTranscriptChange = onTranscriptChange || null;
+
     this.mediaRecorder = null;
     this.audioChunks = [];
     this.audioContext = null;
@@ -21,7 +31,7 @@ export class AudioRecorder {
     this.liveTranscript = '';
   }
 
-  async start({ onVolumeChange, onLiveTranscript } = {}) {
+  async start() {
     if (this.isRecording) return;
 
     this.liveTranscript = '';
@@ -50,7 +60,7 @@ export class AudioRecorder {
       const bufferLength = this.analyser.frequencyBinCount;
       this.dataArray = new Uint8Array(bufferLength);
 
-      // Volume monitoring loop
+      // Volume & frequency monitoring loop
       const updateVolume = () => {
         if (!this.isRecording) return;
         this.analyser.getByteFrequencyData(this.dataArray);
@@ -60,11 +70,13 @@ export class AudioRecorder {
           sum += this.dataArray[i];
         }
         const average = sum / bufferLength;
-        // Amplify volume slightly for responsive visualizer
         const normalizedVolume = Math.min(1, (average / 100) * 1.2);
 
-        if (onVolumeChange) {
-          onVolumeChange(normalizedVolume, this.dataArray);
+        if (this.onVolumeChange) {
+          this.onVolumeChange(normalizedVolume);
+        }
+        if (this.onFrequencyData) {
+          this.onFrequencyData(this.dataArray.slice());
         }
 
         this.animationFrameId = requestAnimationFrame(updateVolume);
@@ -85,8 +97,8 @@ export class AudioRecorder {
               fullText += event.results[i][0].transcript + ' ';
             }
             this.liveTranscript = fullText.trim();
-            if (onLiveTranscript) {
-              onLiveTranscript(this.liveTranscript);
+            if (this.onTranscriptChange) {
+              this.onTranscriptChange(this.liveTranscript);
             }
           };
 
@@ -135,10 +147,14 @@ export class AudioRecorder {
     }
   }
 
+  /**
+   * Stops recording and returns the audio Blob directly.
+   * @returns {Promise<Blob>} the recorded audio blob
+   */
   stop() {
     return new Promise((resolve) => {
       if (!this.mediaRecorder || !this.isRecording) {
-        resolve({ blob: null, liveTranscript: this.liveTranscript });
+        resolve(null);
         return;
       }
 
@@ -178,10 +194,7 @@ export class AudioRecorder {
           this.audioContext.close();
         }
 
-        resolve({
-          blob: audioBlob,
-          liveTranscript: this.liveTranscript.trim()
-        });
+        resolve(audioBlob);
       };
 
       this.mediaRecorder.stop();
