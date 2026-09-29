@@ -50,11 +50,16 @@ export function App() {
   const [currentVoice, setCurrentVoice] = useState(() => localStorage.getItem('kaju_voice') || 'en-US-AvaNeural');
 
   const [models, setModels] = useState([
-    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile' },
-    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant' },
-    { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B 32k' }
+    { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B (Default - High Quality)' },
+    { id: 'openai/gpt-oss-20b', name: 'GPT OSS 20B (Ultra Fast)' },
+    { id: 'qwen/qwen3.8-27b', name: 'Qwen 3.8 27B' },
+    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B' },
+    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant' }
   ]);
-  const [currentModel, setCurrentModel] = useState(() => localStorage.getItem('kaju_model') || 'llama-3.3-70b-versatile');
+  const [currentModel, setCurrentModel] = useState(() => {
+    const saved = localStorage.getItem('kaju_model');
+    return saved && !saved.includes('llama') ? saved : 'openai/gpt-oss-120b';
+  });
   const [customPrompt, setCustomPrompt] = useState(() => localStorage.getItem('kaju_prompt') || DEFAULT_PROMPT);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('kaju_api_key') || '');
 
@@ -196,10 +201,12 @@ export function App() {
       }
     } catch (error) {
       const errMsg = error.message || 'Error communicating with assistant.';
+      const isKeyIssue = errMsg.toLowerCase().includes('key') || errMsg.toLowerCase().includes('unauthorized') || errMsg.toLowerCase().includes('401') || errMsg.toLowerCase().includes('configured');
+      const suffix = isKeyIssue ? ' Please check your Groq API key in Settings.' : '';
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Error: ${errMsg}. Please check your API key in Settings.`,
+        content: `Error: ${errMsg}${suffix}`,
         timestamp: new Date().toISOString()
       }]);
       setStatus('idle');

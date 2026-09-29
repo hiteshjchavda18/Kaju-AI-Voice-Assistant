@@ -1,32 +1,40 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const mongoose = require('mongoose');
 const Conversation = require('../models/Conversation');
 
-// Local fallback file in case MongoDB is not running locally
-const FALLBACK_FILE = path.join(__dirname, '..', 'local_sessions.json');
+// Local fallback file in case MongoDB is not running locally (safe for serverless /tmp)
+const FALLBACK_FILE = path.join(os.tmpdir(), 'kaju_local_sessions.json');
+let memorySessions = null;
 
 function isMongoConnected() {
   return mongoose.connection.readyState === 1;
 }
 
 function getLocalSessions() {
+  if (Array.isArray(memorySessions)) {
+    return memorySessions;
+  }
   try {
     if (fs.existsSync(FALLBACK_FILE)) {
       const data = fs.readFileSync(FALLBACK_FILE, 'utf-8');
-      return JSON.parse(data);
+      memorySessions = JSON.parse(data);
+      return memorySessions;
     }
   } catch (e) {
-    console.error('Error reading local sessions file:', e);
+    console.error('Error reading local sessions file:', e.message);
   }
-  return [];
+  memorySessions = [];
+  return memorySessions;
 }
 
 function saveLocalSessions(sessions) {
+  memorySessions = sessions;
   try {
     fs.writeFileSync(FALLBACK_FILE, JSON.stringify(sessions, null, 2), 'utf-8');
   } catch (e) {
-    console.error('Error saving local sessions file:', e);
+    console.warn('Notice: Local session file could not be persisted to disk (using memory):', e.message);
   }
 }
 

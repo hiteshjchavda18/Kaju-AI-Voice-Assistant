@@ -27,16 +27,33 @@ app.get('/', (req, res) => {
 
 // MongoDB Connection with Graceful Fallback
 async function connectDB() {
+  const isPlaceholder = !MONGO_URI || MONGO_URI.includes('placeholder') || MONGO_URI.includes('example');
+  const isLocalhostOnCloud = (process.env.VERCEL || process.env.NODE_ENV === 'production') && (MONGO_URI.includes('127.0.0.1') || MONGO_URI.includes('localhost'));
+
+  if (isPlaceholder || isLocalhostOnCloud) {
+    console.log('📦 Using high-speed JSON / in-memory persistent storage fallback for chat sessions.');
+    return;
+  }
+
   try {
     await mongoose.connect(MONGO_URI, {
       serverSelectionTimeoutMS: 2500
     });
     console.log('🍃 MongoDB connected successfully!');
   } catch (err) {
-    console.warn('⚠️  MongoDB connection failed or not running locally.');
+    console.warn('⚠️  MongoDB connection failed or not running locally:', err.message);
     console.log('📦 Using high-speed JSON persistent storage fallback for chat sessions.');
   }
 }
+
+// Global error handler middleware so responses are always valid JSON
+app.use((err, req, res, next) => {
+  console.error('[Global Server Error]:', err);
+  if (res.headersSent) return next(err);
+  return res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error'
+  });
+});
 
 connectDB().then(() => {
   if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {

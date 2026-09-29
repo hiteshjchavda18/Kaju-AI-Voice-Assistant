@@ -27,7 +27,7 @@ exports.handleChatMessage = async (req, res) => {
     }
 
     if (!apiKey) {
-      return res.status(500).json({ error: 'Groq API Key is not configured.' });
+      return res.status(400).json({ error: 'Groq API Key is not configured. Please enter your Groq API key in Settings.' });
     }
 
     // Build context array with System Instruction + Past messages + New message
@@ -85,10 +85,11 @@ exports.handleChatMessage = async (req, res) => {
  */
 exports.getAvailableModels = (req, res) => {
   const models = [
-    { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B (High Quality)', description: 'Fast, articulate & natural reasoning' },
-    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', description: 'Meta latest powerful conversational model' },
-    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', description: 'Ultra-fast low-latency responses' },
-    { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B 32k', description: 'High context mixture of experts' }
+    { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B (Default - High Quality)', description: 'Fast, articulate & natural reasoning' },
+    { id: 'openai/gpt-oss-20b', name: 'GPT OSS 20B (Ultra Fast)', description: 'Low latency reasoning' },
+    { id: 'qwen/qwen3.8-27b', name: 'Qwen 3.8 27B', description: 'Multilingual conversational model' },
+    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', description: 'Meta powerful conversational model' },
+    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', description: 'Ultra-fast low-latency responses' }
   ];
   return res.json({ models });
 };
